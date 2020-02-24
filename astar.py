@@ -1,6 +1,17 @@
 from json import loads
 from copy import deepcopy
 from math import sqrt
+from time import sleep
+
+class Node():
+    def __init__(self, name, localDistance, quality, parent):
+        self.name = name
+        self.localDistance = localDistance
+        self.quality = quality
+        self.parent = parent
+
+    def __repr__(self):
+        return "%s: Q: %s | parent: %s" % (self.name, self.quality, self.parent)
 
 def getShopList(filename):
     f = open(filename, 'r')
@@ -30,7 +41,7 @@ def createMatrixLocalDistance(shops, shopsObj):
             else:
                 inter[p] = -1
         res[point] = inter
-        print(inter)
+        # print(inter)
     return res
 
 def createDictTotalDistance(shops, shopsObj, destinationPoint):
@@ -42,27 +53,62 @@ def createDictTotalDistance(shops, shopsObj, destinationPoint):
         xa = shopsObj[point]['x']
         ya = shopsObj[point]['y']
         res[point] = calcDistance(xa, ya, xb, yb)
-    print(res)
+    # print(res)
     return res
 
 def printMatrix(matrix):
     for line in matrix:
         print(line)
 
+def isInList(name, my_list):
+    for i in range(len(my_list)):
+        if my_list[i].name == name:
+            return i
+    return -1
+
+def extractPath(closeList):
+    res = []
+    end = closeList.pop()
+    while end.parent != None:
+        res.append(end.name)
+        end = closeList[isInList(end.parent, closeList)]
+    res.append(closeList[0].name)
+    res.reverse()
+    return res
 
 def astar(shopsObj, matrixLocalDistance, matrixTotalDistance, deb, end):
     openList = []
-    closeList = []
+    closeList = [Node(deb, 0, 0, None)]
+    actual_node = closeList[0]
+    while actual_node.name != end:
+        # print("NODE ACTUELLE : "+actual_node.name)
+        for link in shopsObj[actual_node.name]['link']:
+            if isInList(link, closeList) == -1:
+                localDistance = actual_node.localDistance + matrixLocalDistance[actual_node.name][link]
+                quality = localDistance + matrixTotalDistance[link]
+                index = isInList(link, openList)
+                if index != -1:
+                    if quality < openList[index].quality:  
+                        openList[index] = Node(link, localDistance, quality, actual_node.name)
+                else:
+                    openList.append(Node(link, localDistance, quality, actual_node.name))
+        if len(openList) == 0:
+            return []
+        openList.sort(key=lambda x: x.quality)
+        actual_node = deepcopy(openList[0])
+        closeList.append(openList.pop(0))
+    return extractPath(closeList)
 
 
 def main():
-    deb = 'A'
-    end = 'G'
+    deb = 'B'
+    end = 'F'
     shops = getShopList('shops.json') # [{'name': 'A', 'type': '...'}, {'name': 'B', ...}, ... ]
     shopsObj = createShopObjects(deepcopy(shops)) # {'A': {'type': '...'}, 'B': {'type': '...'}, ... }
     matrixLocalDistance = createMatrixLocalDistance(shops, shopsObj)
-    matrixTotalDistance = createDictTotalDistance(shops, shopsObj, 'G')
-    astar(shopsObj, matrixLocalDistance, matrixTotalDistance, deb, end)
+    matrixTotalDistance = createDictTotalDistance(shops, shopsObj, end)
+    path = astar(shopsObj, matrixLocalDistance, matrixTotalDistance, deb, end)
+    print(path)
 
 if __name__ == "__main__":
     main()
