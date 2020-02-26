@@ -13,7 +13,7 @@ class Node():
     def __repr__(self):
         return "%s: Q: %s | parent: %s" % (self.name, self.quality, self.parent)
 
-def getShopList(filename):
+def fileToList(filename):
     f = open(filename, 'r')
     a = loads(f.read())
     f.close()
@@ -99,16 +99,44 @@ def astar(shopsObj, matrixLocalDistance, matrixTotalDistance, deb, end):
         closeList.append(openList.pop(0))
     return extractPath(closeList)
 
+# récupère l'id de la bande sur laquelle est le point
+def findBandeFromPath(shopsObj, bandes, src, dest):
+    if shopsObj[src]['x'] == shopsObj[dest]['x']:
+        axe = 'y'
+        opo = 'x'
+    else:
+        axe = 'x'
+        opo = 'y'
+    # print("AXE = "+axe)
+    for b in bandes:
+        if b['axe'] == axe and shopsObj[src][opo] == b[opo] and (shopsObj[src][axe] >= b['deb'] and shopsObj[src][axe] <= b['end'] and
+            shopsObj[dest][axe] >= b['deb'] and shopsObj[dest][axe] <= b['end']):
+            return b['id'] 
+
+# récupère quelle led allumer en première et en dernière
+# après faire une boucle qui allume du deb a la fin
+def getFirstLastLed(shopsObj, bandes, src, dest):
+    bandIndex = findBandeFromPath(shopsObj, bandes, src, dest) - 1
+    print("id bande = "+str(bandIndex + 1))
+    if shopsObj[src]['x'] == shopsObj[dest]['x']:
+        axe = 'y'
+    else:
+        axe = 'x'
+    deb = shopsObj[src][axe] - bandes[bandIndex]['deb']
+    end = shopsObj[dest][axe] - bandes[bandIndex]['deb']
+    return deb, end
+    #print(str(deb)+" => "+str(end))
 
 def main():
     deb = 'B'
     end = 'F'
-    shops = getShopList('shops.json') # [{'name': 'A', 'type': '...'}, {'name': 'B', ...}, ... ]
+    shops = fileToList('shops.json') # [{'name': 'A', 'type': '...'}, {'name': 'B', ...}, ... ]
+    bandes = fileToList('bandes.json')
     shopsObj = createShopObjects(deepcopy(shops)) # {'A': {'type': '...'}, 'B': {'type': '...'}, ... }
     matrixLocalDistance = createMatrixLocalDistance(shops, shopsObj)
     matrixTotalDistance = createDictTotalDistance(shops, shopsObj, end)
     path = astar(shopsObj, matrixLocalDistance, matrixTotalDistance, deb, end)
-    print(path)
+    getFirstLastLed(shopsObj, bandes, "F", "E")
 
 if __name__ == "__main__":
     main()
