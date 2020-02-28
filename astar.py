@@ -112,12 +112,13 @@ def findBandeFromPath(shopsObj, bandes, src, dest):
         if b['axe'] == axe and shopsObj[src][opo] == b[opo] and (shopsObj[src][axe] >= b['deb'] and shopsObj[src][axe] <= b['end'] and
             shopsObj[dest][axe] >= b['deb'] and shopsObj[dest][axe] <= b['end']):
             return b['id'] 
+    return None
 
 # récupère quelle led allumer en première et en dernière
 # après faire une boucle qui allume du deb a la fin
 def getFirstLastLed(shopsObj, bandes, src, dest):
     bandIndex = findBandeFromPath(shopsObj, bandes, src, dest) - 1
-    print("id bande = "+str(bandIndex + 1))
+    # print("id bande = "+str(bandIndex + 1))
     if shopsObj[src]['x'] == shopsObj[dest]['x']:
         axe = 'y'
     else:
@@ -127,16 +128,24 @@ def getFirstLastLed(shopsObj, bandes, src, dest):
     return deb, end
     #print(str(deb)+" => "+str(end))
 
-def main():
-    deb = 'B'
-    end = 'F'
+def getServerFromBand(servers, id):
+    for server in servers:
+        if id in server['bands']:
+            return server['ip'], server['port']
+    return None
+
+def calcPath(deb, end):
     shops = fileToList('shops.json') # [{'name': 'A', 'type': '...'}, {'name': 'B', ...}, ... ]
     bandes = fileToList('bandes.json')
     shopsObj = createShopObjects(deepcopy(shops)) # {'A': {'type': '...'}, 'B': {'type': '...'}, ... }
     matrixLocalDistance = createMatrixLocalDistance(shops, shopsObj)
     matrixTotalDistance = createDictTotalDistance(shops, shopsObj, end)
-    path = astar(shopsObj, matrixLocalDistance, matrixTotalDistance, deb, end)
-    getFirstLastLed(shopsObj, bandes, "F", "E")
+    return astar(shopsObj, matrixLocalDistance, matrixTotalDistance, deb, end)
+    
+
+def main():
+    # print(getFirstLastLed(shopsObj, bandes, "F", "E"))
+    print("cool")
 
 if __name__ == "__main__":
     main()
